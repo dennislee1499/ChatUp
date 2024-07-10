@@ -32,7 +32,7 @@ app.post('/register', async (req, res) => {
             secure: true, 
             maxAge: 300000
         }).status(201).json({
-            _id: createdUser._id,
+            id: createdUser._id,
         });
     } catch (err) {
         console.error(err); 
