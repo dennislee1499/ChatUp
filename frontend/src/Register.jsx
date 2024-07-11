@@ -1,6 +1,7 @@
 import { useContext, useState } from "react"
 import axios from "axios"; 
 import { UserContext } from "./UserContext";
+import { Link } from "react-router-dom";
 
 export default function Register() {
     const [username, setUsername] = useState('');
@@ -30,7 +31,7 @@ export default function Register() {
                 />
                 <button className="bg-blue-500 text-white block w-full rounded-sm p-2">Register</button>
                 <div className="text-center cursor-pointer mt-4">
-                    Already a member? <a href="/register"></a>
+                    <Link to="/login">Already a member?</Link>
                 </div>
             </form>
         </div>
