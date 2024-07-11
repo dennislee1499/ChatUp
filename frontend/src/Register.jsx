@@ -6,12 +6,12 @@ export default function Register() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
 
-    const { setUsername: setLoggedInUsername, setId } = useContext(UserContext);
+    const { setUsername: setLoggedInUser, setId } = useContext(UserContext);
 
     async function register(e) {
         e.preventDefault(); 
         const { data } = await axios.post('/register', { username, password });
-        setLoggedInUsername(username);
+        setLoggedInUser(username);
         setId(data.id);
     }
 
