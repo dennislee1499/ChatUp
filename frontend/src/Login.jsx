@@ -1,13 +1,13 @@
 import { useContext, useState } from "react"
 import { UserContext } from "./UserContext";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-
     const { setUsername: setLoggedInUser, setId } = useContext(UserContext);
+    const navigate = useNavigate();
     
     async function login(e) {
         e.preventDefault(); 
@@ -15,6 +15,7 @@ export default function Login() {
             const { data } = await axios.post('/login', { username, password }); 
             setLoggedInUser(username); 
             setId(data.id); 
+            navigate('/');
         } catch (err) {
             console.error('Login Failed:', err); 
         }
