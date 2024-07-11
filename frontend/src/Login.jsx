@@ -13,7 +13,6 @@ export default function Login() {
         e.preventDefault(); 
         try {
             const { data } = await axios.post('/login', { username, password }); 
-            console.log('Login response:', data);
             setLoggedInUser(username); 
             setId(data.id); 
         } catch (err) {

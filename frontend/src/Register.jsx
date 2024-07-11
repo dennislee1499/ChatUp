@@ -13,7 +13,6 @@ export default function Register() {
         e.preventDefault();
         try {
             const { data } = await axios.post('/register', { username, password });
-            console.log('Register response:', data);
             setLoggedInUser(username);
             setId(data.id);
         } catch (err) {
