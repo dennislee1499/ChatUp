@@ -10,10 +10,15 @@ export default function Register() {
     const { setUsername: setLoggedInUser, setId } = useContext(UserContext);
 
     async function register(e) {
-        e.preventDefault(); 
-        const { data } = await axios.post('/register', { username, password });
-        setLoggedInUser(username);
-        setId(data.id);
+        e.preventDefault();
+        try {
+            const { data } = await axios.post('/register', { username, password });
+            console.log('Register response:', data);
+            setLoggedInUser(username);
+            setId(data.id);
+        } catch (err) {
+            console.error('Register failed:', err);
+        }
     }
 
     return (

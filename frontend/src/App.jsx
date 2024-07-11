@@ -1,6 +1,7 @@
 import axios from "axios";
 import { UserContextProvider } from "./UserContext";
-import Routes from "./Routes";
+import { BrowserRouter as Router } from "react-router-dom";
+import AppRoutes from "./AppRoutes";
 
 function App() {
   axios.defaults.baseURL = 'http://localhost:4000';
@@ -8,7 +9,9 @@ function App() {
   
   return (
     <UserContextProvider>
-      <Routes />
+      <Router>
+        <AppRoutes />
+      </Router>
     </UserContextProvider>
   )
 }
