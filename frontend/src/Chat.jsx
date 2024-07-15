@@ -48,7 +48,7 @@ export default function Chat() {
                         {userId === selectedUserId && (
                             <div className="w-1 h-12 bg-blue-500 rounded-r-md"></div>
                         )}
-                        <div className="flex gap-2 py-2 pl-2 items-center">
+                        <div className="flex gap-2 py-2 pl-4 items-center">
                             <Avatar username={activeUsers[userId]} userId={userId} />
                             <span>{activeUsers[userId]}</span>
                         </div>
@@ -57,7 +57,11 @@ export default function Chat() {
             </div>
             <div className="flex flex-col bg-blue-100 w-2/3 p-2">
                 <div className="flex-grow">
-                    Messages with selected person
+                    {!selectedUserId && (
+                        <div className="flex h-full flex-grow items-center justify-center">
+                            <div className="text-gray-400">&larr; Start Chatting!</div>
+                        </div>
+                    )}
                 </div>
                 <div className="flex gap-1">
                     <input type="text" 
