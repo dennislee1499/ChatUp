@@ -11,9 +11,23 @@ export default function Chat() {
     const { username, id } = useContext(UserContext);
 
     useEffect(() => {
-        const ws = new WebSocket('ws://localhost:4000');
-        setWs(ws);
-        ws.addEventListener('message', handleMsg);
+        const ws = new WebSocket('ws://localhost:4000'); 
+        ws.onopen = () => {
+            console.log("W.S connection established"); 
+            setWs(ws); 
+        };
+
+        ws.onmessage = handleMsg; 
+        ws.onerror = (error) => {
+            console.error("W.S error:", error);
+        };
+        ws.onclose = () => {
+            console.log("W.S connection closed");
+        };
+
+        return () => {
+            ws.close();
+        };
     }, []);
 
     function showActiveUsers(userArr) {
@@ -35,13 +49,17 @@ export default function Chat() {
     }
 
     function sendMsg(e) {
-        e.preventDefault();
-        ws.send(JSON.stringify({
-            message: {
-                recipient: selectedUserId,
-                text: message,
-            }
-        }));
+        e.preventDefault(); 
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                message: {
+                    recipient: selectedUserId,
+                    text: message,
+                }
+            }));
+        } else {
+            console.error('W.S is not open');
+        }
     }
 
     const activeUsersExcludingSelf = {...activeUsers}; 

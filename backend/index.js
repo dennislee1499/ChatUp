@@ -99,12 +99,16 @@ wss.on('connection', (connection, req) => {
                     const { userId, username } = userData; 
                     connection.userId = userId; 
                     connection.username = username; 
-                })
+                });
             }
         }
      }
 
-     [...wss.clients].forEach(client => {
+     connection.on('message', (message) => {
+        console.log(message)
+     })
+
+     wss.clients.forEach(client => {
         client.send(JSON.stringify({
             online: [...wss.clients].map(c => ({ userId: c.userId, username: c.username }))
         }))
