@@ -105,7 +105,14 @@ wss.on('connection', (connection, req) => {
      }
 
      connection.on('message', (message) => {
-        console.log(message)
+        msgData = JSON.parse(message.toString()); 
+        const { recipient, text } = msgData;
+         
+        if (recipient && text) {
+            [...wss.clients]
+                .filter(c => c.userId === recipient)
+                .forEach(c => c.send(JSON.stringify({ text, sender: connection.userId })))
+        }   
      })
 
      wss.clients.forEach(client => {

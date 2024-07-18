@@ -7,7 +7,8 @@ export default function Chat() {
     const [ws, setWs] = useState(null);
     const [activeUsers, setActiveUsers] = useState({}); 
     const [selectedUserId, setSelectedUserId] = useState(null);  
-    const [message, setMessage] = useState('');
+    const [messageInput, setMessageInput] = useState('');
+    const [messages, setMessages] = useState([]);
     const { username, id } = useContext(UserContext);
 
     useEffect(() => {
@@ -45,6 +46,8 @@ export default function Chat() {
         const msgData = JSON.parse(e.data); 
         if ('online' in msgData) {
             showActiveUsers(msgData.online); 
+        } else {
+            setMessages(prev => ([...prev, {isOurMsg: false, text: msgData.text}]))
         }
     }
 
@@ -52,14 +55,14 @@ export default function Chat() {
         e.preventDefault(); 
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
-                message: {
-                    recipient: selectedUserId,
-                    text: message,
-                }
+                recipient: selectedUserId,
+                text: messageInput,
             }));
         } else {
             console.error('W.S is not open');
         }
+        setMessageInput('');
+        setMessages(prev => ([...prev, { text: messageInput, isOurMsg: true }]))
     }
 
     const activeUsersExcludingSelf = {...activeUsers}; 
@@ -91,12 +94,21 @@ export default function Chat() {
                             <div className="text-gray-400">&larr; Start Chatting!</div>
                         </div>
                     )}
+                    {!!selectedUserId && (
+                        <div>
+                            {messages.map(message => (
+                                <div>
+                                    {message.text}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
                 {!!selectedUserId && (
                     <form className="flex gap-1" onSubmit={sendMsg}>
                         <input type="text"
-                            value={message}
-                            onChange={e => setMessage(e.target.value)} 
+                            value={messageInput}
+                            onChange={e => setMessageInput(e.target.value)} 
                             placeholder="Type here" 
                             className="bg-white border flex-grow rounded-sm p-1" 
                         />
