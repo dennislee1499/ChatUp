@@ -2,6 +2,8 @@ import { useContext, useEffect, useRef, useState } from "react"
 import Avatar from "./Avatar";
 import Logo from "./Logo";
 import { UserContext } from "./UserContext";
+import axios from "axios";
+import { uniqBy } from "lodash";
 
 export default function Chat() {
     const [ws, setWs] = useState(null);
@@ -13,6 +15,10 @@ export default function Chat() {
     const msgRef = useRef();
 
     useEffect(() => {
+        connectToWs();
+    }, []);
+
+    function connectToWs() {
         const ws = new WebSocket('ws://localhost:4000'); 
         ws.onopen = () => {
             console.log("W.S connection established"); 
@@ -25,12 +31,16 @@ export default function Chat() {
         };
         ws.onclose = () => {
             console.log("W.S connection closed");
+            setTimeout(() => {
+                console.log('Disconnected, trying to connect')
+            }, 1500)
+            connectToWs();
         };
 
         return () => {
             ws.close();
         };
-    }, []);
+    }
 
     function showActiveUsers(userArr) {
         const filteredUsers = userArr.filter(user => Object.keys(user).length > 0); 
@@ -68,7 +78,7 @@ export default function Chat() {
             text: messageInput, 
             sender: id,
             recipient: selectedUserId, 
-            id: Date.now(),
+            _id: Date.now(),
         }]));
     }
 
@@ -78,8 +88,18 @@ export default function Chat() {
         }
     }, [messages])
 
+    useEffect(() => {
+        if (selectedUserId) {
+            axios.get('/messages/'+selectedUserId).then(res => {
+                setMessages(res.data);
+            })
+        }
+    }, [selectedUserId])
+
     const activeUsersExcludingSelf = {...activeUsers}; 
     delete activeUsersExcludingSelf[id];
+
+    const msgsWithoutDup = uniqBy(messages, '_id');
 
     return (
         <div className="flex h-screen">
@@ -110,9 +130,9 @@ export default function Chat() {
                     {!!selectedUserId && (
                         <div className="relative h-full">
                             <div className="overflow-y-scroll absolute top-0 left-0 right-0 bottom-4">
-                                {messages.map(message => (
-                                    <div key={message.id} className={(message.sender === id ? 'text-right' : 'text-left')}>
-                                        <div key={message.id} className={"text-left inline-block p-2 rounded-md my-2 text-sm " +(message.sender === id ? 'bg-blue-500 text-white' : 'bg-gray-500 text-white')}>
+                                {msgsWithoutDup.map(message => (
+                                    <div key={message._id} className={(message.sender === id ? 'text-right' : 'text-left')}>
+                                        <div key={message._id} className={"text-left inline-block p-2 rounded-md my-2 text-sm " +(message.sender === id ? 'bg-blue-500 text-white' : 'bg-gray-500 text-white')}>
                                             {message.text}
                                         </div>
                                     </div>

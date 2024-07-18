@@ -21,8 +21,33 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+async function getUserData(req) {
+    const token = req.cookies?.token;
+    return new Promise((resolve, reject) => {
+        if (token) {
+            jwt.verify(token, jwtSecret, {}, (err, userData) => {
+                if (err) throw err; 
+                resolve(userData);
+            });
+        } else {
+            reject('No token found'); 
+        }
+    });
+}
+
 app.get('/test', (req, res) => {
     res.json('test okkkk');
+})
+
+app.get('/messages/:userId', async (req, res) => {
+    const { userId } = req.params; 
+    const userData = await getUserData(req);
+    const ourId = userData.userId; 
+    const messages = await Message.find({
+        sender: {$in: [userId, ourId]},
+        recipient: {$in: [userId, ourId]},   
+    }).sort({ createdAt: 1 });
+    res.json(messages);
 })
 
 app.get('/profile', async (req, res) => {
@@ -77,7 +102,7 @@ app.post('/login', async (req, res) => {
         res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            maxAge: 300000
+            maxAge: 1000000
         }).status(200).json({ id: user._id });
     } catch (err) {
         console.error(err); 
