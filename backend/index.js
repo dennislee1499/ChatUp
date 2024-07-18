@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const bcrypt = require('bcrypt'); 
 const User = require('./models/User');
+const Message = require('./models/Message');
 const ws = require('ws');
 
 mongoose.connect(process.env.MONGO_URI);
@@ -104,16 +105,30 @@ wss.on('connection', (connection, req) => {
         }
      }
 
-     connection.on('message', (message) => {
-        msgData = JSON.parse(message.toString()); 
-        const { recipient, text } = msgData;
-         
-        if (recipient && text) {
-            [...wss.clients]
-                .filter(c => c.userId === recipient)
-                .forEach(c => c.send(JSON.stringify({ text, sender: connection.userId })))
-        }   
-     })
+     connection.on('message', async (message) => {
+        try {
+            msgData = JSON.parse(message.toString()); 
+            const { recipient, text } = msgData;
+
+            if (recipient && text) {
+                const msgDoc = await Message.create({
+                    sender: connection.userId,
+                    recipient, 
+                    text,
+                });
+                [...wss.clients]
+                    .filter(c => c.userId === recipient)
+                    .forEach(c => c.send(JSON.stringify({
+                        text, 
+                        sender: connection.userId,
+                        recipient: recipient,
+                        id: msgDoc._id,
+                })));
+            }
+        } catch (err) {
+            console.error('Error handling messages:', err)
+        } 
+     });
 
      wss.clients.forEach(client => {
         client.send(JSON.stringify({

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useRef, useState } from "react"
 import Avatar from "./Avatar";
 import Logo from "./Logo";
 import { UserContext } from "./UserContext";
@@ -10,6 +10,7 @@ export default function Chat() {
     const [messageInput, setMessageInput] = useState('');
     const [messages, setMessages] = useState([]);
     const { username, id } = useContext(UserContext);
+    const msgRef = useRef();
 
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:4000'); 
@@ -44,10 +45,11 @@ export default function Chat() {
 
     function handleMsg(e) {
         const msgData = JSON.parse(e.data); 
+        console.log({ e, msgData })
         if ('online' in msgData) {
             showActiveUsers(msgData.online); 
-        } else {
-            setMessages(prev => ([...prev, {isOurMsg: false, text: msgData.text}]))
+        } else if ('text' in msgData) {
+            setMessages(prev => ([...prev, { ...msgData }]));
         }
     }
 
@@ -62,8 +64,19 @@ export default function Chat() {
             console.error('W.S is not open');
         }
         setMessageInput('');
-        setMessages(prev => ([...prev, { text: messageInput, isOurMsg: true }]))
+        setMessages(prev => ([...prev, {
+            text: messageInput, 
+            sender: id,
+            recipient: selectedUserId, 
+            id: Date.now(),
+        }]));
     }
+
+    useEffect(() => {
+        if (msgRef.current) {
+            msgRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' })
+        }
+    }, [messages])
 
     const activeUsersExcludingSelf = {...activeUsers}; 
     delete activeUsersExcludingSelf[id];
@@ -95,12 +108,17 @@ export default function Chat() {
                         </div>
                     )}
                     {!!selectedUserId && (
-                        <div>
-                            {messages.map(message => (
-                                <div>
-                                    {message.text}
-                                </div>
-                            ))}
+                        <div className="relative h-full">
+                            <div className="overflow-y-scroll absolute top-0 left-0 right-0 bottom-4">
+                                {messages.map(message => (
+                                    <div key={message.id} className={(message.sender === id ? 'text-right' : 'text-left')}>
+                                        <div key={message.id} className={"text-left inline-block p-2 rounded-md my-2 text-sm " +(message.sender === id ? 'bg-blue-500 text-white' : 'bg-gray-500 text-white')}>
+                                            {message.text}
+                                        </div>
+                                    </div>
+                                ))}
+                                <div ref={msgRef}></div>
+                            </div>
                         </div>
                     )}
                 </div>
