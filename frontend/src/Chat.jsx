@@ -1,13 +1,15 @@
 import { useContext, useEffect, useRef, useState } from "react"
-import Avatar from "./Avatar";
+// import Avatar from "./Avatar";
 import Logo from "./Logo";
 import { UserContext } from "./UserContext";
 import axios from "axios";
 import { uniqBy } from "lodash";
+import Users from "./Users";
 
 export default function Chat() {
     const [ws, setWs] = useState(null);
     const [activeUsers, setActiveUsers] = useState({}); 
+    const [inactiveUsers, setInactiveUsers] = useState({}); 
     const [selectedUserId, setSelectedUserId] = useState(null);  
     const [messageInput, setMessageInput] = useState('');
     const [messages, setMessages] = useState([]);
@@ -83,6 +85,19 @@ export default function Chat() {
     }
 
     useEffect(() => {
+        axios.get('/users').then(res => {
+            const offlineUsersArr = res.data
+                .filter(u => u._id !== id)
+                .filter(u => !Object.keys(activeUsers).includes(u._id));
+            const offlineUsers = {};
+            offlineUsersArr.forEach(u => {
+                offlineUsers[u._id] = u; 
+            })
+            setInactiveUsers(offlineUsers);
+        });
+    }, [activeUsers]);
+
+    useEffect(() => {
         if (msgRef.current) {
             msgRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' })
         }
@@ -106,18 +121,24 @@ export default function Chat() {
             <div className="bg-white w-1/3">
                 <Logo />
                 {Object.keys(activeUsersExcludingSelf).map(userId => (
-                    <div onClick={() => setSelectedUserId(userId)} 
-                         key={userId} 
-                         className={"border-b border-gray-100 flex items-center gap-2 cursor-pointer "+(userId === selectedUserId ? 'bg-blue-50' : '')}
-                    >
-                        {userId === selectedUserId && (
-                            <div className="w-1 h-12 bg-blue-500 rounded-r-md"></div>
-                        )}
-                        <div className="flex gap-2 py-2 pl-4 items-center">
-                            <Avatar username={activeUsers[userId]} userId={userId} />
-                            <span>{activeUsers[userId]}</span>
-                        </div>
-                    </div>
+                    <Users
+                        key={userId} 
+                        id={userId} 
+                        online={true}
+                        username={activeUsersExcludingSelf[userId]}
+                        onClick={() => setSelectedUserId(userId)}
+                        selected={userId === selectedUserId}
+                    />
+                ))}
+                {Object.keys(inactiveUsers).map(userId => (
+                    <Users
+                        key={userId} 
+                        id={userId} 
+                        online={false}
+                        username={inactiveUsers[userId].username}
+                        onClick={() => setSelectedUserId(userId)}
+                        selected={userId === selectedUserId}
+                    />
                 ))}
             </div>
             <div className="flex flex-col bg-blue-100 w-2/3 p-2">

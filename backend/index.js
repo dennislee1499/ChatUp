@@ -50,6 +50,11 @@ app.get('/messages/:userId', async (req, res) => {
     res.json(messages);
 })
 
+app.get('/users', async (req, res) => {
+    const users = await User.find( {}, {'_id': 1, username: 1}); 
+    res.json(users);
+})
+
 app.get('/profile', async (req, res) => {
     const token = req.cookies?.token;
     if (token) {
