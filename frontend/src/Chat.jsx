@@ -13,7 +13,7 @@ export default function Chat() {
     const [selectedUserId, setSelectedUserId] = useState(null);  
     const [messageInput, setMessageInput] = useState('');
     const [messages, setMessages] = useState([]);
-    const { username, id } = useContext(UserContext);
+    const { username, id, setUsername, setId } = useContext(UserContext);
     const msgRef = useRef();
 
     useEffect(() => {
@@ -84,6 +84,13 @@ export default function Chat() {
         }]));
     }
 
+    function logout() {
+        axios.post('/logout').then(() => {
+            setId(null);
+            setUsername(null);
+        })
+    }
+
     useEffect(() => {
         axios.get('/users').then(res => {
             const offlineUsersArr = res.data
@@ -118,28 +125,37 @@ export default function Chat() {
 
     return (
         <div className="flex h-screen">
-            <div className="bg-white w-1/3">
-                <Logo />
-                {Object.keys(activeUsersExcludingSelf).map(userId => (
-                    <Users
-                        key={userId} 
-                        id={userId} 
-                        online={true}
-                        username={activeUsersExcludingSelf[userId]}
-                        onClick={() => setSelectedUserId(userId)}
-                        selected={userId === selectedUserId}
-                    />
-                ))}
-                {Object.keys(inactiveUsers).map(userId => (
-                    <Users
-                        key={userId} 
-                        id={userId} 
-                        online={false}
-                        username={inactiveUsers[userId].username}
-                        onClick={() => setSelectedUserId(userId)}
-                        selected={userId === selectedUserId}
-                    />
-                ))}
+            <div className="bg-white w-1/3 flex flex-col">
+                <div className="flex-grow">
+                    <Logo />
+                    {Object.keys(activeUsersExcludingSelf).map(userId => (
+                        <Users
+                            key={userId} 
+                            id={userId} 
+                            online={true}
+                            username={activeUsersExcludingSelf[userId]}
+                            onClick={() => setSelectedUserId(userId)}
+                            selected={userId === selectedUserId}
+                        />
+                    ))}
+                    {Object.keys(inactiveUsers).map(userId => (
+                        <Users
+                            key={userId} 
+                            id={userId} 
+                            online={false}
+                            username={inactiveUsers[userId].username}
+                            onClick={() => setSelectedUserId(userId)}
+                            selected={userId === selectedUserId}
+                        />
+                    ))}
+                </div>
+                <div className="p-2 text-center">
+                    <button
+                        onClick={logout} 
+                        className="text-gray-600 bg-blue-300 py-1 px-3 border rounded-md">
+                            Logout
+                    </button>
+                </div>
             </div>
             <div className="flex flex-col bg-blue-100 w-2/3 p-2">
                 <div className="flex-grow">

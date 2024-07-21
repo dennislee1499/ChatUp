@@ -115,6 +115,13 @@ app.post('/login', async (req, res) => {
     }
 })
 
+app.post('/logout', async (req, res) => {
+    res.cookie('token', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+    }).status(200).json('logged out');
+})
+
 const server = app.listen(4000);
 
 const wss = new ws.WebSocketServer({ server });
