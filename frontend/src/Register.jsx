@@ -22,9 +22,13 @@ export default function Register() {
     }
 
     return (
-        <div className="bg-blue-50 h-screen flex flex-col items-center">
-            <Logo large />
-            <div className="flex flex-col items-center justify-center flex-grow">
+        <div className="bg-blue-50 h-screen flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center space-y-4 mb-20">
+                <Logo large />
+                <p className="text-3xl">Chat with your favorite people.</p>
+                <p className="text-3xl">Got questions? Ask our ChatBot!</p>
+            </div>
+            <div className="flex flex-col items-center justify-center">
                 <form className="w-64 mx-auto mb-12" onSubmit={register}>
                     <input value={username}
                         onChange={e => setUsername(e.target.value)}
