@@ -8,11 +8,15 @@ const bcrypt = require('bcrypt');
 const User = require('./models/User');
 const Message = require('./models/Message');
 const ws = require('ws');
+const fs = require('fs');
+const path = require('path');
 
 mongoose.connect(process.env.MONGO_URI);
 const jwtSecret = process.env.JWT_SECRET; 
 
 const app = express(); 
+const uploadDir = path.join(__dirname, 'uploads'); 
+
 app.use(cors({
     credentials: true,
     origin: process.env.CLIENT_URL,
@@ -20,6 +24,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookieParser());
+app.use('/uploads', express.static(uploadDir));
 
 async function getUserData(req) {
     const token = req.cookies?.token;
@@ -141,6 +146,7 @@ wss.on('connection', (connection, req) => {
         connection.ping();
         connection.invalidTimer = setTimeout(() => {
             connection.isValid = false;
+            clearInterval(connection.invalidTimer);
             connection.terminate();
             notifyUserStatus();
         }, 1000); 
@@ -169,20 +175,33 @@ wss.on('connection', (connection, req) => {
      connection.on('message', async (message) => {
         try {
             msgData = JSON.parse(message.toString()); 
-            const { recipient, text } = msgData;
+            const { recipient, text, file } = msgData;
+            let fileName = null; 
 
-            if (recipient && text) {
+            if (file) {
+                const parts = file.name.split('.');
+                const extension = parts[parts.length - 1]; 
+                fileName = Date.now() + '.'+extension;
+                const filePath = __dirname + '/uploads/' + fileName;
+                const data = Buffer.from(file.data.split(',')[1], 'base64');
+                fs.writeFile(filePath, data, () => {
+                    console.log('file saved'+ filePath);
+                });
+            }
+            if (recipient && (text || file)) {
                 const msgDoc = await Message.create({
                     sender: connection.userId,
                     recipient, 
                     text,
+                    file: file ? fileName : null,
                 });
                 [...wss.clients]
-                    .filter(c => c.userId === recipient)
+                    .filter(c => c.userId === recipient || c.userId === connection.userId)
                     .forEach(c => c.send(JSON.stringify({
                         text, 
                         sender: connection.userId,
                         recipient: recipient,
+                        file: file ? fileName : null,
                         id: msgDoc._id,
                 })));
             }

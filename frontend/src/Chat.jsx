@@ -57,7 +57,6 @@ export default function Chat() {
 
     function handleMsg(e) {
         const msgData = JSON.parse(e.data); 
-        console.log({ e, msgData })
         if ('online' in msgData) {
             showActiveUsers(msgData.online); 
         } else if ('text' in msgData) {
@@ -65,12 +64,13 @@ export default function Chat() {
         }
     }
 
-    function sendMsg(e) {
-        e.preventDefault(); 
+    function sendMsg(e, file = null) {
+        if (e) e.preventDefault(); 
         if (ws && ws.readyState === WebSocket.OPEN) {
             ws.send(JSON.stringify({
                 recipient: selectedUserId,
                 text: messageInput,
+                file,
             }));
         } else {
             console.error('W.S is not open');
@@ -82,12 +82,29 @@ export default function Chat() {
             recipient: selectedUserId, 
             _id: Date.now(),
         }]));
+        if (file) {
+            axios.get('/messages/'+selectedUserId).then(res => {
+                setMessages(res.data);
+            })
+        }
+    }
+
+    function sendFile(e) {
+        const reader = new FileReader();
+        reader.readAsDataURL(e.target.files[0]);
+        reader.onload = () => {
+            sendMsg(null, {
+                name: e.target.files[0].name,
+                data: reader.result,
+            });
+        }
     }
 
     function logout() {
         axios.post('/logout').then(() => {
             setId(null);
             setUsername(null);
+            setWs(null);
         })
     }
 
@@ -172,6 +189,13 @@ export default function Chat() {
                                     <div key={message._id} className={(message.sender === id ? 'text-right' : 'text-left')}>
                                         <div key={message._id} className={"text-left inline-block p-2 rounded-md my-2 text-sm " +(message.sender === id ? 'bg-blue-500 text-white' : 'bg-gray-500 text-white')}>
                                             {message.text}
+                                            {message.file && (
+                                                <div>
+                                                    <a target="_blank" className="border-b" href={axios.defaults.baseURL + '/uploads/' + message.file}>
+                                                        {message.file}
+                                                    </a>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -188,6 +212,12 @@ export default function Chat() {
                             placeholder="Type here" 
                             className="bg-white border flex-grow rounded-sm p-1" 
                         />
+                        <label className="bg-gray-400 text-black rounded-sm p-1 border-gray-300 cursor-pointer">
+                            <input type="file" className="hidden" onChange={sendFile} />
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
+                            </svg>
+                        </label>
                         <button type="submit" className="bg-blue-500 text-white rounded-sm p-1">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
