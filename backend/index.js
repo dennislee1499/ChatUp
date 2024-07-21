@@ -119,6 +119,30 @@ const server = app.listen(4000);
 
 const wss = new ws.WebSocketServer({ server });
 wss.on('connection', (connection, req) => {
+
+    function notifyUserStatus() {
+        wss.clients.forEach(client => {
+            client.send(JSON.stringify({
+                online: [...wss.clients].map(c => ({ userId: c.userId, username: c.username }))
+            }));
+        });
+    }
+
+    connection.isValid = true; 
+
+    connection.timer = setInterval(() => {
+        connection.ping();
+        connection.invalidTimer = setTimeout(() => {
+            connection.isValid = false;
+            connection.terminate();
+            notifyUserStatus();
+        }, 1000); 
+    }, 3000);
+
+    connection.on('pong', () => {
+        clearTimeout(connection.invalidTimer);
+    })
+
      const cookies = req.headers.cookie;
      if (cookies) {
         const tokenCookieString = cookies.split(';').find(str => str.startsWith('token='));
@@ -160,9 +184,5 @@ wss.on('connection', (connection, req) => {
         } 
      });
 
-     wss.clients.forEach(client => {
-        client.send(JSON.stringify({
-            online: [...wss.clients].map(c => ({ userId: c.userId, username: c.username }))
-        }))
-     })
+     notifyUserStatus();
 })
