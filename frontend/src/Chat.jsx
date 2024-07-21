@@ -150,6 +150,7 @@ export default function Chat() {
                     ))}
                 </div>
                 <div className="p-2 text-center">
+                    <span className="mr-10 text-gray-700">Hey {username}!</span>
                     <button
                         onClick={logout} 
                         className="text-gray-600 bg-blue-300 py-1 px-3 border rounded-md">
