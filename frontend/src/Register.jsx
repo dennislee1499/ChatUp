@@ -1,12 +1,13 @@
 import { useContext, useState } from "react"
 import axios from "axios"; 
 import { UserContext } from "./UserContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Logo from "./Logo";
 
 export default function Register() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const navigate = useNavigate(); 
 
     const { setUsername: setLoggedInUser, setId } = useContext(UserContext);
 
@@ -16,6 +17,7 @@ export default function Register() {
             const { data } = await axios.post('/register', { username, password });
             setLoggedInUser(username);
             setId(data.id);
+            navigate('/');
         } catch (err) {
             console.error('Register failed:', err);
         }
