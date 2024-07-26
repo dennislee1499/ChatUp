@@ -10,9 +10,11 @@ const Message = require('./models/Message');
 const ws = require('ws');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios'); 
 
 mongoose.connect(process.env.MONGO_URI);
-const jwtSecret = process.env.JWT_SECRET; 
+const jwtSecret = process.env.JWT_SECRET;
+const openaiSecret = process.env.API_KEY;
 
 const app = express(); 
 const uploadDir = path.join(__dirname, 'uploads'); 
@@ -127,9 +129,32 @@ app.post('/logout', async (req, res) => {
     }).status(200).json('logged out');
 })
 
+app.post('/chatbot', async (req, res) => {
+    const { message } = req.body; 
+
+    try {
+        const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+            model: 'gpt-3.5-turbo',
+            messages: [{ role: 'user', content: message }],
+            max_tokens: 150, 
+        }, {
+            headers: {
+                'Authorization': `Bearer ${openaiSecret}`,
+            },
+        });
+
+        const reply = response.data.choices[0].message.content.trim(); 
+        res.json({ reply });
+    } catch (err) {
+        console.error('Error communicating with ChatBot', err.response ? err.response.data: err);
+        res.status(500).json({ err: 'Failed to communicate with ChatBot' });
+    }
+});
+
 const server = app.listen(4000);
 
 const wss = new ws.WebSocketServer({ server });
+
 wss.on('connection', (connection, req) => {
 
     function notifyUserStatus() {
@@ -204,6 +229,24 @@ wss.on('connection', (connection, req) => {
                         file: file ? fileName : null,
                         id: msgDoc._id,
                 })));
+
+                if (recipient === 'ChatBot') {
+                    const botResponse = await axios.post('http://localhost:4000/chatbot', { message: text });
+                    const botMsgDoc = await Message.create({
+                        sender: 'ChatBot',
+                        recipient: connection.userId,
+                        text: botResponse.data.reply,
+                    });
+
+                    [...wss.clients]
+                        .filter(c => c.userId === connection.userId)
+                        .forEach(c => c.send(JSON.stringify({
+                            text: botResponse.data.reply,
+                            sender: 'ChatBot',
+                            recipient: connection.userId,
+                            id: botMsgDoc._id,
+                        })));
+                }
             }
         } catch (err) {
             console.error('Error handling messages:', err)
